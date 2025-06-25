@@ -2,6 +2,8 @@ import os
 import typing as t
 from dataclasses import dataclass
 
+import backoff
+import backoff.types
 import cyclopts
 import dotenv
 import dreadnode as dn
@@ -16,6 +18,25 @@ from recipe_agent.utils import calculate_gluten_free_score, extract_recipe_conte
 logfire.configure()
 
 app = cyclopts.App()
+
+
+def on_backoff(details: backoff.types.Details) -> None:
+    """Handle backoff events for rate limiting."""
+    wait = details.get("wait", 0)
+    logger.warning(f"Backing off {wait:.2f}s")
+
+
+# Create backoff wrapper for handling rate limits and API errors
+backoff_wrapper = backoff.on_exception(
+    backoff.expo,
+    (
+        Exception,  # Catch all exceptions for robustness
+    ),
+    max_time=5 * 60,  # 5 minutes
+    max_value=240,  # 4 minutes
+    on_backoff=on_backoff,
+    jitter=backoff.random_jitter,
+)
 
 
 @cyclopts.Parameter(name="*", group="args")
@@ -80,7 +101,7 @@ async def request_gluten_free_recipe(generator: rg.Generator, enable_caching: bo
         except AttributeError:
             logger.debug("Message caching not supported, skipping cache")
 
-    chat = await generator.chat(message).run()
+    chat = await generator.wrap(backoff_wrapper).chat(message).run()
 
     request = chat.last.content
     logger.info(f"Recipe request: {request}")
@@ -167,8 +188,8 @@ async def generate_recipe(
 
     user_message = Message(role="user", content=f"User request: {request}")
 
-    # Build the pipeline with optional tools
-    pipeline = generator.chat([system_message, user_message])
+    # Build the pipeline with optional tools and backoff
+    pipeline = generator.wrap(backoff_wrapper).chat([system_message, user_message])
 
     if enable_tools:
         logger.info("Enabling rigging tools for recipe generation")
@@ -261,7 +282,7 @@ async def judge_gluten_free_ingredients(
         content=f"Please evaluate this recipe for gluten-free compliance:\n\n{recipe_content}",
     )
 
-    chat = await generator.chat([system_message, user_message]).run()
+    chat = await generator.wrap(backoff_wrapper).chat([system_message, user_message]).run()
 
     evaluation = chat.last.content
     logger.info(f"Ingredient evaluation: {evaluation}")
