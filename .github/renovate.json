@@ -1,0 +1,157 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":disableRateLimiting",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    ":enablePreCommit",
+    ":automergeDigest",
+    ":automergeBranch"
+  ],
+  "dependencyDashboardTitle": "Renovate Dashboard 🤖",
+  "suppressNotifications": [
+    "prIgnoreNotification"
+  ],
+  "rebaseWhen": "conflicted",
+  "commitBodyTable": true,
+  "pre-commit": {
+    "enabled": true
+  },
+  "enabledManagers": [
+    "npm",
+    "github-actions",
+    "poetry",
+    "pip_requirements",
+    "docker-compose",
+    "dockerfile",
+    "pre-commit"
+  ],
+  "timezone": "America/New_York",
+  "schedule": [
+    "before 4am"
+  ],
+  "labels": [
+    "dependency"
+  ],
+  "packageRules": [
+    {
+      "matchUpdateTypes": [
+        "patch"
+      ],
+      "matchCurrentVersion": "!/^0/",
+      "automerge": true
+    },
+    {
+      "matchDepTypes": [
+        "devDependencies"
+      ],
+      "groupName": "dev dependencies"
+    },
+    {
+      "groupName": "typescript-types",
+      "matchPackageNames": [
+        "/^@types//"
+      ]
+    },
+    {
+      "groupName": "eslint packages",
+      "matchPackageNames": [
+        "/eslint/"
+      ]
+    },
+    {
+      "matchManagers": [
+        "poetry",
+        "pip_requirements"
+      ],
+      "groupName": "pytest packages",
+      "groupSlug": "pytest",
+      "separateMinorPatch": true,
+      "matchPackageNames": [
+        "/^pytest/"
+      ]
+    },
+    {
+      "matchManagers": [
+        "poetry",
+        "pip_requirements"
+      ],
+      "matchDepTypes": [
+        "python"
+      ],
+      "allowedVersions": "^3.8",
+      "enabled": true
+    },
+    {
+      "description": "Auto merge Python linting and formatting tools",
+      "matchManagers": [
+        "poetry",
+        "pip_requirements"
+      ],
+      "matchPackageNames": [
+        "black",
+        "flake8",
+        "isort",
+        "mypy",
+        "pylint",
+        "autopep8",
+        "yapf",
+        "bandit",
+        "pycodestyle",
+        "pydocstyle",
+        "pyflakes",
+        "ruff",
+        "/^flake8-/",
+        "/^mypy-/",
+        "/^pylint-/"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "automerge": true,
+      "automergeType": "pr"
+    },
+    {
+      "description": "Auto merge Python minor version updates for all packages",
+      "matchManagers": [
+        "poetry",
+        "pip_requirements"
+      ],
+      "matchUpdateTypes": [
+        "minor"
+      ],
+      "matchCurrentVersion": "!/^0/",
+      "automerge": true,
+      "automergeType": "pr"
+    },
+    {
+      "description": "Auto merge GitHub Actions minor and patch updates",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "automerge": true,
+      "automergeType": "pr"
+    },
+    {
+      "description": "Auto merge non-major updates",
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "automerge": true,
+      "automergeType": "pr"
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": [
+      "security"
+    ]
+  }
+}
